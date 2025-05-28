@@ -18,12 +18,13 @@ Este projeto contém serviços essenciais para gerenciamento seguro de senhas e 
 - Verificação de códigos TOTP gerados no dispositivo do usuário
 
 ### 2. Criptografia
-- Criptografia e descriptografia de dados sensíveis usando AES no modo GCM com autenticação
-- Geração de chave AES segura e com tamanho adequado a partir de uma senha base usando SHA-256
-- Uso de vetor de inicialização  aleatório para cada criptografia, aumentando a segurança contra ataques de padrão
-- Hashing seguro de senhas com BCrypt, incluindo geração automática de salt e fator de custo ajustável
-- Verificação segura de correspondência de senhas hashadas com BCrypt
-- Geração de hash SHA-512 para uso em verificação de vazamentos de senhas
+- Criptografia e descriptografia usando AES no modo GCM com autenticação
+- Geração de chave AES segura a partir de senha base via SHA-256
+- Uso de vetor de inicialização (IV) aleatório para cada criptografia
+- Hashing seguro de senhas com BCrypt
+- Verificação segura de senhas com BCrypt
+- Geração de hash SHA-512 para verificação de vazamento de senhas
+- Geração de hash SHA-1 para necessidades específicas
 
 ### 3. Senhas
 
@@ -42,7 +43,7 @@ Este projeto contém serviços essenciais para gerenciamento seguro de senhas e 
 
 ## Teste de qualidade 
 
-![image](https://github.com/user-attachments/assets/4c207929-02d9-4b44-ab1e-e487d59ae68d)
+![image](https://github.com/user-attachments/assets/eaf863ae-e5e7-401f-a665-c4e484bda048)
 
 
 ---
