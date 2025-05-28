@@ -1,0 +1,53 @@
+# Password Manager - Serviços de Segurança em Java
+
+Este projeto contém serviços essenciais para gerenciamento seguro de senhas e autenticação, desenvolvidos em Java. Inclui funcionalidades para:
+
+- Autenticação de dois fatores (2FA) baseada em TOTP (Time-Based One-Time Password)
+- Criptografia e descriptografia AES para armazenamento seguro de dados
+- Hashing e verificação de senhas usando BCrypt
+- Geração de senhas fortes e avaliação da força da senha
+
+---
+
+## Funcionalidades
+
+### 1. Autenticação 2FA
+
+- Geração de secret para 2FA
+- Criação de URLs QR Code para configuração em aplicativos autenticadores (Google Authenticator, Authy etc.)
+- Verificação de códigos TOTP gerados no dispositivo do usuário
+
+### 2. Criptografia
+
+- Criptografia e descriptografia usando AES (modo ECB com padding PKCS5)
+- Geração de chave AES segura a partir de uma senha base usando SHA-256
+- Hashing seguro de senhas com BCrypt
+- Verificação de correspondência de senhas hashadas
+- Geração de hash SHA-1 para uso em verificação de vazamentos
+
+### 3. Senhas
+
+- Geração de senhas aleatórias fortes, com letras maiúsculas, minúsculas, números e símbolos
+- Cálculo da força da senha baseado em comprimento e diversidade de caracteres
+
+---
+
+## Tecnologias e Bibliotecas
+
+- Java 21+
+- API externa: Have I Been Pwned - Passwords
+- Java Cryptography Architecture (JCA) para criptografia AES
+
+---
+
+## Teste de qualidade 
+
+![image](https://github.com/user-attachments/assets/442b6f21-3808-4195-a233-261c9afb9bba)
+
+
+---
+
+
+## Como usar
+
+git clone https://github.com/matheusfsl/gerenciador-de-senhas
