@@ -112,7 +112,7 @@ public class CriptografiaService {
     // Método auxiliar para gerar hash SHA-1 (usado na verificação de vazamentos)
     public static String toSHA1(String input) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            MessageDigest digest = MessageDigest.getInstance("SHA-512");
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder hexString = new StringBuilder();
