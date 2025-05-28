@@ -1,9 +1,9 @@
 import Model.Credencial;
 import Model.Usuario;
 import Service.AutenticacaoService;
-import Service.CriptografiaService;
 import Service.SenhaService;
 import Service.VazamentoService;
+import br.com.matheus.Service.CriptografiaService;
 
 import java.util.ArrayList;
 import java.util.List;

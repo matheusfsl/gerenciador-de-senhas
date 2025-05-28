@@ -1,10 +1,11 @@
 package Service;
 
+import br.com.matheus.Service.CriptografiaService;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import Service.CriptografiaService;
 
 /**
  * Serviço para verificar se uma senha foi vazada usando a API do HaveIBeenPwned (HIBP)
