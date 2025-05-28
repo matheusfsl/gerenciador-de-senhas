@@ -42,7 +42,7 @@ Este projeto contém serviços essenciais para gerenciamento seguro de senhas e 
 
 ## Teste de qualidade 
 
-![image](https://github.com/user-attachments/assets/442b6f21-3808-4195-a233-261c9afb9bba)
+![image](https://github.com/user-attachments/assets/4c207929-02d9-4b44-ab1e-e487d59ae68d)
 
 
 ---
