@@ -3,141 +3,157 @@ package br.com.matheus.Service;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.spec.KeySpec;
 import java.util.Base64;
+import java.security.MessageDigest;
 
 public class CriptografiaService {
-    private static final String ALGORITHM = "AES"; // Algoritmo de criptografia simétrica (AES)
-    private static final int AES_KEY_SIZE = 128;   // Tamanho da chave AES em bits (128 bits = 16 bytes)
-    private static final int GCM_IV_LENGTH = 12;   // Tamanho do vetor de inicialização (IV) para AES-GCM (12 bytes é o recomendado)
-    private static final int GCM_TAG_LENGTH = 128; // Tamanho da tag de autenticação do AES-GCM em bits
+
+    // Constantes para configurar a criptografia AES-GCM
+    private static final String AES_ALGORITHM = "AES";
+    private static final String CIPHER_ALGORITHM = "AES/GCM/NoPadding";
+
+    private static final int AES_KEY_SIZE_BITS = 128; // Tamanho da chave AES
+    private static final int SALT_LENGTH = 16;        // Salt de 16 bytes para PBKDF2
+    private static final int GCM_IV_LENGTH = 12;      // IV recomendado para GCM 
+    private static final int GCM_TAG_LENGTH_BITS = 128; // Tamanho da tag de autenticação GCM
+    private static final int PBKDF2_ITERATIONS = 65536; // Número de iterações para derivar a chave
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    /**
-     * Gera um hash BCrypt para a senha fornecida
-     */
+    // Método para gerar hash de senha usando BCrypt
     public static String hashSenha(String senha) {
         return BCrypt.hashpw(senha, BCrypt.gensalt());
     }
 
-    /**
-     * Verifica se uma senha em texto claro corresponde a um hash BCrypt
-     */
+    // Método para verificar se a senha confere com o hash BCrypt armazenado
     public static boolean verificarSenha(String senha, String hash) {
         try {
             return BCrypt.checkpw(senha, hash);
         } catch (Exception e) {
+            // Caso algo dê errado, retorna falso para garantir segurança
             return false;
         }
     }
 
-    /**
-     * Criptografa um texto usando AES/GCM com IV aleatório
-     */
-    public static String criptografar(String dado, String chave) {
+    // Gera a chave AES a partir da senha e do salt usando PBKDF2WithHmacSHA256
+    private static SecretKeySpec gerarChaveAES(String senha, byte[] salt) throws Exception {
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec spec = new PBEKeySpec(
+                senha.toCharArray(),
+                salt,
+                PBKDF2_ITERATIONS,
+                AES_KEY_SIZE_BITS
+        );
+        byte[] keyBytes = factory.generateSecret(spec).getEncoded();
+        return new SecretKeySpec(keyBytes, AES_ALGORITHM);
+    }
+
+    // Criptografa a string usando AES-GCM e uma senha
+    // O resultado é uma string Base64 contendo salt + IV + dados criptografados
+    public static String criptografar(String dado, String senha) {
         try {
-            byte[] chaveBytes = gerarChaveAES(chave);
-            SecretKeySpec secretKey = new SecretKeySpec(chaveBytes, ALGORITHM);
+            // Primeiro gera um salt aleatório para derivar a chave
+            byte[] salt = new byte[SALT_LENGTH];
+            secureRandom.nextBytes(salt);
 
+            // Deriva a chave AES com a senha e o salt gerado
+            SecretKeySpec keySpec = gerarChaveAES(senha, salt);
+
+            // Gera o vetor de inicialização (IV) aleatório para o AES-GCM
             byte[] iv = new byte[GCM_IV_LENGTH];
-            secureRandom.nextBytes(iv); // IV aleatório
+            secureRandom.nextBytes(iv);
 
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmSpec);
+            // Inicializa o Cipher para criptografar
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
 
-            byte[] dadoCriptografado = cipher.doFinal(dado.getBytes(StandardCharsets.UTF_8));
+            // Faz a criptografia dos dados em bytes UTF-8
+            byte[] encrypted = cipher.doFinal(dado.getBytes(StandardCharsets.UTF_8));
 
-            // Concatenar IV + dado criptografado e codificar em Base64
-            byte[] resultadoComIV = new byte[iv.length + dadoCriptografado.length];
-            System.arraycopy(iv, 0, resultadoComIV, 0, iv.length);
-            System.arraycopy(dadoCriptografado, 0, resultadoComIV, iv.length, dadoCriptografado.length);
+            // Junta o salt + IV + texto criptografado para guardar tudo junto
+            ByteBuffer buffer = ByteBuffer.allocate(salt.length + iv.length + encrypted.length);
+            buffer.put(salt);
+            buffer.put(iv);
+            buffer.put(encrypted);
 
-            return Base64.getEncoder().encodeToString(resultadoComIV);
+            // Codifica tudo em Base64 para facilitar armazenamento/transmissão
+            return Base64.getEncoder().encodeToString(buffer.array());
         } catch (Exception e) {
-            throw new RuntimeException("Falha na criptografia", e);
+            throw new RuntimeException("Erro ao criptografar dado", e);
         }
     }
 
-    /**
-     * Descriptografa um texto usando AES/GCM extraindo o IV do início do texto
-     */
-    public static String descriptografar(String dadoCriptografado, String chave) {
+    // Descriptografa a string que foi criptografada pelo método acima
+    // Recebe Base64 com salt + IV + dados e retorna o texto original
+    public static String descriptografar(String dadoCriptografado, String senha) {
         try {
-            byte[] dados = Base64.getDecoder().decode(dadoCriptografado);
+            byte[] decoded = Base64.getDecoder().decode(dadoCriptografado);
+
+            ByteBuffer buffer = ByteBuffer.wrap(decoded);
+
+            // Extrai o salt para derivar a chave correta
+            byte[] salt = new byte[SALT_LENGTH];
+            buffer.get(salt);
+
+            // Extrai o vetor de inicialização (IV) usado na criptografia
             byte[] iv = new byte[GCM_IV_LENGTH];
-            byte[] dadoReal = new byte[dados.length - GCM_IV_LENGTH];
+            buffer.get(iv);
 
-            // Separa IV e dado criptografado
-            System.arraycopy(dados, 0, iv, 0, iv.length);
-            System.arraycopy(dados, iv.length, dadoReal, 0, dadoReal.length);
+            // Extrai o texto criptografado que sobra no buffer
+            byte[] encrypted = new byte[buffer.remaining()];
+            buffer.get(encrypted);
 
-            byte[] chaveBytes = gerarChaveAES(chave);
-            SecretKeySpec secretKey = new SecretKeySpec(chaveBytes, ALGORITHM);
+            // Regenera a chave AES com a senha e o salt extraído
+            SecretKeySpec keySpec = gerarChaveAES(senha, salt);
 
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec);
+            // Inicializa o Cipher para descriptografar
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM);
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv);
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
 
-            byte[] bytesDescriptografados = cipher.doFinal(dadoReal);
-            return new String(bytesDescriptografados, StandardCharsets.UTF_8);
+            // Decripta os dados e converte para string UTF-8
+            byte[] decrypted = cipher.doFinal(encrypted);
+
+            return new String(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new RuntimeException("Falha na descriptografia", e);
+            throw new RuntimeException("Erro ao descriptografar dado", e);
         }
     }
 
-    /**
-     * Gera uma chave AES de 128 bits a partir de uma string
-     */
-    private static byte[] gerarChaveAES(String chave) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hash = digest.digest(chave.getBytes(StandardCharsets.UTF_8));
-        byte[] chaveAES = new byte[16]; // AES-128
-        System.arraycopy(hash, 0, chaveAES, 0, chaveAES.length);
-        return chaveAES;
+    // Método para gerar hash SHA512 em hexadecimal maiúsculo
+    public static String toSHA512(String texto) {
+        return gerarHashHex(texto, "SHA-512");
     }
 
-    /**
-     * Gera um hash SHA-512 em formato hexadecimal (útil para checar vazamentos de senha)
-     */
-    // SHA-512 - uso interno, não compatível com HaveIBeenPwned
-    public static String toSHA512(String input) {
+    // Método para gerar hash SHA1 em hexadecimal maiúsculo
+    public static String toSHA1(String texto) {
+        return gerarHashHex(texto, "SHA-1");
+    }
+
+    // Método genérico para gerar hash em hexadecimal maiúsculo usando o algoritmo indicado
+    private static String gerarHashHex(String texto, String algoritmo) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-512");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            MessageDigest digest = MessageDigest.getInstance(algoritmo);
+            byte[] hash = digest.digest(texto.getBytes(StandardCharsets.UTF_8));
 
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
+                // Converte byte para string hex de 2 dígitos
+                hexString.append(String.format("%02x", b));
             }
             return hexString.toString().toUpperCase();
         } catch (Exception e) {
-            throw new RuntimeException("Falha ao gerar hash SHA-512", e);
+            throw new RuntimeException("Erro ao gerar hash com " + algoritmo, e);
         }
     }
 
-    // SHA-1 - necessário para verificar com a API do HaveIBeenPwned, ja que o outro não é compativel 
-    public static String toSHA1(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString().toUpperCase();
-        } catch (Exception e) {
-            throw new RuntimeException("Falha ao gerar hash SHA-1", e);
-        }
-    }
 }
