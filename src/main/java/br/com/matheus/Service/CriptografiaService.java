@@ -11,10 +11,10 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 public class CriptografiaService {
-    private static final String ALGORITHM = "AES";
-    private static final int AES_KEY_SIZE = 128; // bits
-    private static final int GCM_IV_LENGTH = 12; // bytes
-    private static final int GCM_TAG_LENGTH = 128; // bits
+    private static final String ALGORITHM = "AES"; // Algoritmo de criptografia simétrica (AES)
+    private static final int AES_KEY_SIZE = 128;   // Tamanho da chave AES em bits (128 bits = 16 bytes)
+    private static final int GCM_IV_LENGTH = 12;   // Tamanho do vetor de inicialização (IV) para AES-GCM (12 bytes é o recomendado)
+    private static final int GCM_TAG_LENGTH = 128; // Tamanho da tag de autenticação do AES-GCM em bits
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
@@ -73,6 +73,7 @@ public class CriptografiaService {
             byte[] iv = new byte[GCM_IV_LENGTH];
             byte[] dadoReal = new byte[dados.length - GCM_IV_LENGTH];
 
+            // Separa IV e dado criptografado
             System.arraycopy(dados, 0, iv, 0, iv.length);
             System.arraycopy(dados, iv.length, dadoReal, 0, dadoReal.length);
 
@@ -104,6 +105,7 @@ public class CriptografiaService {
     /**
      * Gera um hash SHA-512 em formato hexadecimal (útil para checar vazamentos de senha)
      */
+    // SHA-512 - uso interno, não compatível com HaveIBeenPwned
     public static String toSHA512(String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -118,6 +120,24 @@ public class CriptografiaService {
             return hexString.toString().toUpperCase();
         } catch (Exception e) {
             throw new RuntimeException("Falha ao gerar hash SHA-512", e);
+        }
+    }
+
+    // SHA-1 - necessário para verificar com a API do HaveIBeenPwned, ja que o outro não é compativel 
+    public static String toSHA1(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString().toUpperCase();
+        } catch (Exception e) {
+            throw new RuntimeException("Falha ao gerar hash SHA-1", e);
         }
     }
 }
