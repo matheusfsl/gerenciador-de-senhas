@@ -12,31 +12,60 @@ import dev.samstevens.totp.time.TimeProvider;
 import java.util.Scanner;
 
 public class AutenticacaoService {
-    // gera e retorna um segredo único para configurar o 2FA de um usuário
+
+    private static final TimeProvider timeProvider = new SystemTimeProvider();
+    private static final CodeGenerator codeGenerator = new DefaultCodeGenerator();
+    private static final CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
+
+    /**
+     * Gera um segredo seguro para o 2FA do usuário
+     */
     public static String gerarSecret2FA() {
         return new DefaultSecretGenerator().generate();
     }
 
-    // gera a URL no formato padrão OTPAUTH que pode ser transformada em um qr Code
-    // e escaneada por aplicativos autenticadores como Google Authenticator
+    /**
+     * Gera uma URL compatível com Google Authenticator e outros apps TOTP
+     *
+     * @param secret Segredo 2FA do usuário
+     * @param email  E-mail do usuário (usado como identificador)
+     * @return URL no padrão otpauth://
+     */
     public static String getQRCode(String secret, String email) {
-        return "otpauth://totp/" + email + "?secret=" + secret + "&issuer=PasswordManager";
+        return String.format("otpauth://totp/%s?secret=%s&issuer=PasswordManager", email, secret);
     }
 
-    // vrifica se o código digitado pelo usuário é válido com base no segredo e no tempo atual
+    /**
+     * Verifica se o código fornecido é válido para o segredo
+     *
+     * @param code   Código TOTP fornecido pelo usuário
+     * @param secret Segredo 2FA do usuário
+     * @return true se o código for válido
+     */
     public static boolean verificarCodigo2FA(String code, String secret) {
-        TimeProvider timeProvider = new SystemTimeProvider();
-        CodeGenerator codeGenerator = new DefaultCodeGenerator();
-        CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
-        return verifier.isValidCode(secret, code);
+        try {
+            return verifier.isValidCode(secret, code);
+        } catch (Exception e) {
+            System.err.println("Erro ao verificar o código 2FA: " + e.getMessage());
+            return false;
+        }
     }
 
-    // método interativo que pede ao usuário para digitar o código 2FA no console,
-    // e chama o método de verificação com o segredo do usuário
+    /**
+     * Autentica o usuário solicitando o código via terminal
+     * (apenas para testes ou aplicações CLI; não use em produção web)
+     *
+     * @param usuario Usuário com segredo 2FA
+     * @return true se o código digitado for válido
+     */
     public static boolean autenticar2FA(Usuario usuario) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Digite o código do seu autenticador:");
-        String code = scanner.nextLine();
-        return verificarCodigo2FA(code, usuario.getSecret2FA());
+        System.out.print("Digite o código do seu autenticador: ");
+        try (Scanner scanner = new Scanner(System.in)) {
+            String code = scanner.nextLine().trim();
+            return verificarCodigo2FA(code, usuario.getSecret2FA());
+        } catch (Exception e) {
+            System.err.println("Erro ao ler o código do console: " + e.getMessage());
+            return false;
+        }
     }
 }
