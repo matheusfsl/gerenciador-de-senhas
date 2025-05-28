@@ -22,7 +22,7 @@ public class VazamentoService {
      */
     public static boolean verificarSenhaVazada(String senha) {
         try {
-            String sha1Hash = CriptografiaService.toSHA1(senha);
+            String sha1Hash = CriptografiaService.toSHA512(senha);
             String prefix = sha1Hash.substring(0, 5);
             String suffix = sha1Hash.substring(5);
 
