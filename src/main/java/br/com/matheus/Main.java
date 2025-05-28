@@ -1,9 +1,13 @@
-import Model.Credencial;
-import Model.Usuario;
-import Service.AutenticacaoService;
-import Service.SenhaService;
-import Service.VazamentoService;
+package br.com.matheus;
+
+
+
+import br.com.matheus.Service.VazamentoService;
+import br.com.matheus.Model.Credencial;
+import br.com.matheus.Model.Usuario;
+import br.com.matheus.Service.AutenticacaoService;
 import br.com.matheus.Service.CriptografiaService;
+import br.com.matheus.Service.SenhaService;
 
 import java.util.ArrayList;
 import java.util.List;

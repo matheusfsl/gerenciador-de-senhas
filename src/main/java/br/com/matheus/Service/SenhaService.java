@@ -1,4 +1,4 @@
-package Service;
+package br.com.matheus.Service;
 
 import java.security.SecureRandom;
 

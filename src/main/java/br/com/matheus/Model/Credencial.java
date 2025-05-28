@@ -1,4 +1,4 @@
-package Model;
+package br.com.matheus.Model;
 
 public class Credencial {
 

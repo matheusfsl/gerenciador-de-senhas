@@ -1,6 +1,6 @@
-package Service;
+package br.com.matheus.Service;
 
-import Model.Usuario;
+import br.com.matheus.Model.Usuario;
 import dev.samstevens.totp.code.CodeGenerator;
 import dev.samstevens.totp.code.CodeVerifier;
 import dev.samstevens.totp.code.DefaultCodeGenerator;

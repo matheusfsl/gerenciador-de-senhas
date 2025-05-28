@@ -56,7 +56,7 @@ public class CriptografiaService {
             byte[] chaveBytes = gerarChaveAES(chave);
             SecretKeySpec secretKey = new SecretKeySpec(chaveBytes, ALGORITHM);
 
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
             byte[] dadoCriptografado = cipher.doFinal(dado.getBytes(StandardCharsets.UTF_8));
@@ -79,7 +79,7 @@ public class CriptografiaService {
             byte[] chaveBytes = gerarChaveAES(chave);
             SecretKeySpec secretKey = new SecretKeySpec(chaveBytes, ALGORITHM);
 
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
             byte[] bytesDescriptografados = cipher.doFinal(Base64.getDecoder().decode(dadoCriptografado));

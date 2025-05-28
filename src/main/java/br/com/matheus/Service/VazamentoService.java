@@ -1,6 +1,5 @@
-package Service;
+package br.com.matheus.Service;
 
-import br.com.matheus.Service.CriptografiaService;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
