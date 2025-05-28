@@ -22,19 +22,21 @@ public class VazamentoService {
      */
     public static boolean verificarSenhaVazada(String senha) {
         try {
-            String sha1Hash = CriptografiaService.toSHA512(senha);
+            // Corrigido para SHA-1 (requerido pela API HIBP)
+            String sha1Hash = CriptografiaService.toSHA1(senha);
             String prefix = sha1Hash.substring(0, 5);
             String suffix = sha1Hash.substring(5);
 
             URL url = new URL(API_URL + prefix);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
+            conn.setReadTimeout(5000);
+            conn.setConnectTimeout(5000);
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    // Linha no formato: SUFIXO:QUANTIDADE
-                    if (line.startsWith(suffix)) {
+                    if (line.toUpperCase().startsWith(suffix)) {
                         return true;
                     }
                 }
